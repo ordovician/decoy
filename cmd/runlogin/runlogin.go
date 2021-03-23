@@ -24,22 +24,14 @@ func checkLogin(user, passwd string) (bool, error) {
 		return false, fmt.Errorf("Error when opening password file: %w", err)
 	}
 	defer file.Close()
-	cwd, _ := os.Getwd()
-	debug.Println("Opened passwd.txt file in ", cwd)
 
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
 		fields := strings.SplitN(scanner.Text(), ":", 2)
-		debug.Printf("Number fields read %d", len(fields))
-		if len(fields) >= 2 {
-			debug.Printf("Read username %s and hashed password %s from password fields\n", fields[0], fields[1])
-		}
 
 		uname := fields[0]
-		debug.Printf("Comparing %s == %s", user, uname)
 		if len(fields) == 2 && user == uname {
-			debug.Println("comparing ", fields[1], " with ", hashPassword(passwd))
 			return fields[1] == hashPassword(passwd), nil
 		}
 	}
@@ -48,28 +40,27 @@ func checkLogin(user, passwd string) (bool, error) {
 }
 
 func main() {
+	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Print("Login: ")
-	input := bufio.NewReader(os.Stdin)
-	user, err := input.ReadString('\n')
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to read login name: %v", err)
+	if !scanner.Scan() {
+		fmt.Fprintln(os.Stderr, "Unable to get login name:", scanner.Err())
+		os.Exit(1)
 	}
 
-	user = strings.TrimSuffix(user, "\n")
-	debug.Println("Read user: ", user)
+	user := scanner.Text()
 
 	fmt.Print("Password: ")
-	passwd, err := input.ReadString('\n')
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to read password: %v", err)
+	if !scanner.Scan() {
+		fmt.Fprintln(os.Stderr, "Unable to get password:", scanner.Err())
+		os.Exit(1)
 	}
-	passwd = strings.TrimSuffix(passwd, "\n")
-	debug.Println("Read password: ", passwd)
+
+	passwd := scanner.Text()
 
 	if ok, err := checkLogin(user, passwd); ok {
 		fmt.Println("You are logged in!")
 	} else if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not log in becase: %v", err)
+		fmt.Fprintln(os.Stderr, "Could not log in becase:", err)
 	} else {
 		fmt.Print("Username does not exist or password was wrong")
 	}
