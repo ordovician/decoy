@@ -4,6 +4,10 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"encoding/base32"
+	"encoding/base64"
+	"encoding/hex"
+	"encoding/pem"
 	"flag"
 	"fmt"
 	"io"
@@ -50,12 +54,32 @@ func main() {
 	fmt.Printf("%s", ciphertext)
 }
 
+// DecodeKey used for encrypton by reading from reader assuming it is stored
+// in encodingStr format.
 func DecodeKey(reader io.Reader, encodingStr string) ([]byte, error) {
 	if encodingStr == "pem" {
-
+		pemData, err := io.ReadAll(reader)
+		if err != nil {
+			return nil, err
+		}
+		block, _ := pem.Decode(pemData)
+		if block == nil {
+			return nil, fmt.Errorf("Could not decode PEM data")
+		}
+		return block.Bytes, nil
 	}
 
-	return []byte{}, nil
+	var decoder io.Reader
+	switch encodingStr {
+	case "hex":
+		decoder = hex.NewDecoder(reader)
+	case "base32":
+		decoder = base32.NewDecoder(base32.StdEncoding, reader)
+	case "base64":
+		decoder = base64.NewDecoder(base64.StdEncoding, reader)
+	}
+
+	return io.ReadAll(decoder)
 }
 
 // encrypt a message using decryption key with AES algorithm operating in block chaining mode
