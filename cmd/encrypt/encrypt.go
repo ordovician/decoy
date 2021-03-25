@@ -51,7 +51,11 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Failed to encrypt %s: %v\n", flag.Arg(0), err)
 		os.Exit(1)
 	}
-	fmt.Printf("%s", ciphertext)
+	encoding := base32.StdEncoding
+	encodedCiphertext := make([]byte, encoding.EncodedLen(len(ciphertext)))
+	encoding.Encode(encodedCiphertext, ciphertext)
+
+	fmt.Printf("%s", encodedCiphertext)
 }
 
 // DecodeKey used for encrypton by reading from reader assuming it is stored
@@ -95,13 +99,16 @@ func encrypt(key []byte, plaintext []byte) ([]byte, error) {
 		return empty, fmt.Errorf("Unable to encrypt message: %w", err)
 	}
 
-	// In cipher-block chaining (CBC) mode we always work with whole blocks,
-	// not partial blocks
+	var msg []byte
 	if len(plaintext)%aes.BlockSize != 0 {
-		return empty, fmt.Errorf("plaintext not a multiple of the AES block size")
+		nblocks := 1 + len(plaintext)/aes.BlockSize
+		msg = make([]byte, nblocks*aes.BlockSize)
+		copy(msg, plaintext)
+	} else {
+		msg = plaintext
 	}
 
-	ciphertext := make([]byte, aes.BlockSize+len(plaintext))
+	ciphertext := make([]byte, aes.BlockSize+len(msg))
 	iv := ciphertext[:aes.BlockSize]
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
 		return empty, err
@@ -111,7 +118,7 @@ func encrypt(key []byte, plaintext []byte) ([]byte, error) {
 	var mode cipher.BlockMode = cipher.NewCBCEncrypter(block, iv)
 
 	// CryptBlocks can work in-place if the two arguments are the same.
-	mode.CryptBlocks(ciphertext[aes.BlockSize:], plaintext)
+	mode.CryptBlocks(ciphertext[aes.BlockSize:], msg)
 
 	return ciphertext, nil
 }

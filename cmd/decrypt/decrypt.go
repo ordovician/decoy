@@ -39,11 +39,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	ciphertext, err := os.ReadFile(flag.Arg(0))
+	encodedText, err := os.ReadFile(flag.Arg(0))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to read %s: %v\n", flag.Arg(0), err)
 		os.Exit(1)
 	}
+
+	ciphertext := make([]byte, base32.StdEncoding.DecodedLen(len(encodedText)))
+	base32.StdEncoding.Decode(ciphertext, encodedText)
 
 	message, err := decrypt(key, ciphertext)
 	if err != nil {
@@ -93,7 +96,7 @@ func decrypt(key []byte, ciphertext []byte) (string, error) {
 	}
 
 	if len(ciphertext) > aes.BlockSize {
-		return "", fmt.Errorf("ciphertext too sort. Needs to be larger than a block")
+		return "", fmt.Errorf("ciphertext too short. Needs to be larger than a block")
 	}
 
 	// The initialization vector is the first block. Also called a nonce. This
