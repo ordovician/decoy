@@ -38,6 +38,7 @@ func LoadKeyFromFile(filename string) (*Key, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Could not load key from file: %w", err)
 	}
+	defer file.Close()
 	return LoadKey(file)
 }
 
@@ -76,15 +77,16 @@ func NewCipher(key *Key) (*Cipher, error) {
 // Encrypt plain text using AES encryption. Will pad if plaintext message not
 // the size of an AES block
 func (cip *Cipher) Encrypt(plaintext []byte) ([]byte, error) {
+	block := cip.block
 
 	var msg []byte
 	if len(plaintext)%aes.BlockSize != 0 {
 		nblocks := 1 + len(plaintext)/aes.BlockSize
 		msg = make([]byte, nblocks*aes.BlockSize)
-		copy(msg, plaintext)
 	} else {
-		msg = plaintext
+		msg = make([]byte, len(plaintext))
 	}
+	copy(msg, plaintext)
 
 	ciphertext := make([]byte, aes.BlockSize+len(msg))
 	iv := ciphertext[:aes.BlockSize]
@@ -93,7 +95,7 @@ func (cip *Cipher) Encrypt(plaintext []byte) ([]byte, error) {
 	}
 
 	// To allow decryption of multiple blocks, not just one
-	var mode cipher.BlockMode = cipher.NewCBCEncrypter(cip.block, iv)
+	var mode cipher.BlockMode = cipher.NewCBCEncrypter(block, iv)
 
 	// CryptBlocks can work in-place if the two arguments are the same.
 	mode.CryptBlocks(ciphertext[aes.BlockSize:], msg)
@@ -104,7 +106,7 @@ func (cip *Cipher) Encrypt(plaintext []byte) ([]byte, error) {
 // Decrypt cipher text using AES
 func (cip *Cipher) Decrypt(ciphertext []byte) ([]byte, error) {
 
-	if len(ciphertext) > aes.BlockSize {
+	if len(ciphertext) < aes.BlockSize {
 		return nil, fmt.Errorf("ciphertext too short. Needs to be larger than a block")
 	}
 
