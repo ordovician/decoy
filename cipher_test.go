@@ -3,7 +3,7 @@ package cipher
 import "testing"
 
 func TestRoundTrip(t *testing.T) {
-	key, _ := GenerateKey(5)
+	key, _ := GenerateKey(16)
 	cip, _ := NewCipher(key)
 
 	msg := "hello world"
@@ -12,6 +12,6 @@ func TestRoundTrip(t *testing.T) {
 	plaintext, _ := cip.Decrypt(ciphertext)
 
 	if msg != string(plaintext) {
-		t.Errorf("plaintext = %s; want %s", plaintext, msg)
+		t.Errorf("plaintext = '%s'; want '%s'", plaintext, msg)
 	}
 }
