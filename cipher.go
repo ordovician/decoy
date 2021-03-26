@@ -26,7 +26,7 @@ func GenerateKey(keyLen int) (*Key, error) {
 }
 
 func LoadKey(reader io.Reader) (*Key, error) {
-	decoder := base32.NewDecoder(base32.StdEncoding, reader)
+	var decoder io.Reader = base32.NewDecoder(base32.StdEncoding, reader)
 	bytes, err := io.ReadAll(decoder)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to load key: %w", err)
@@ -45,8 +45,9 @@ func LoadKeyFromFile(filename string) (*Key, error) {
 
 // Save file with base32 encoding to writer
 func (key *Key) Save(writer io.Writer) {
-	encoder := base32.NewEncoder(base32.StdEncoding, writer)
+	var encoder io.WriteCloser = base32.NewEncoder(base32.StdEncoding, writer)
 	encoder.Write(key.Bytes)
+	encoder.Close()
 }
 
 // SaveToFile stores key at file name filename
