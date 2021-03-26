@@ -1,6 +1,8 @@
 package cipher
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestRoundTrip(t *testing.T) {
 	key, _ := GenerateKey(16)
@@ -11,7 +13,9 @@ func TestRoundTrip(t *testing.T) {
 	ciphertext, _ := cip.Encrypt([]byte(msg))
 	plaintext, _ := cip.Decrypt(ciphertext)
 
-	if msg != string(plaintext) {
-		t.Errorf("plaintext = '%s'; want '%s'", plaintext, msg)
+	s := string(plaintext)
+
+	if msg != s {
+		t.Errorf("plaintext = '%s'; want '%s'\n", plaintext, msg)
 	}
 }

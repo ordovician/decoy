@@ -1,6 +1,7 @@
 package cipher
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -103,7 +104,8 @@ func (cip *Cipher) Encrypt(plaintext []byte) ([]byte, error) {
 	return ciphertext, nil
 }
 
-// Decrypt cipher text using AES
+// Decrypt cipher text using AES. We assume data stored is UTF-8 text
+// and hence a 0, would mark the end of the text
 func (cip *Cipher) Decrypt(ciphertext []byte) ([]byte, error) {
 
 	if len(ciphertext) < aes.BlockSize {
@@ -127,6 +129,12 @@ func (cip *Cipher) Decrypt(ciphertext []byte) ([]byte, error) {
 
 	// CryptBlocks can work in-place if the two arguments are the same.
 	mode.CryptBlocks(ciphertext, ciphertext)
+
+	// remove padding
+	n := bytes.IndexByte(ciphertext, byte(0))
+	if n != -1 {
+		return ciphertext[:n], nil
+	}
 
 	return ciphertext, nil
 }
