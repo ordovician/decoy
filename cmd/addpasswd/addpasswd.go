@@ -41,5 +41,5 @@ func main() {
 	}
 
 	file.Seek(0, 2)
-	fmt.Fprintf(file, "%s:%s", username, hashPassword(passwd))
+	fmt.Fprintf(file, "%s:%s\n", username, hashPassword(passwd))
 }
