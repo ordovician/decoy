@@ -24,18 +24,17 @@ func (cmd *HelpCmd) Name() string {
 
 func (cmd *HelpCmd) Help(w io.Writer) {
 	fmt.Fprintln(w, `NAME
-	help -- give help for a command
+    help -- give help for a command
 SYNOPSIS
-	help command
+    help command
 DESCRIPTION
-	The help command displays help for a command.`)
+    The help command displays help for a command.`)
 }
 
 func (cmd *HelpCmd) Run(w io.Writer, args []string) {
 	if len(args) == 0 {
 		fmt.Fprintln(w, `Valid commands:
-			ls   cat   exit   help
-		`)
+    ls   cat   exit   help`)
 		return
 	}
 
@@ -56,9 +55,9 @@ func (cmd *ListCmd) Help(w io.Writer) {
 	fmt.Fprintln(w, `NAME
 	ls -- list content of current directory
 SYNOPSIS
-	ls [directory]
+    ls [directory]
 DESCRIPTION
-	The ls command shows all files and directories in working directory`)
+    The ls command shows all files and directories in working directory`)
 }
 
 func (cmd *ListCmd) Run(w io.Writer, args []string) {
@@ -75,11 +74,11 @@ func (cmd *CatCmd) Name() string {
 
 func (cmd *CatCmd) Help(w io.Writer) {
 	fmt.Fprintln(w, `NAME
-	cat -- concatenate and print files
+    cat -- concatenate and print files
 SYNOPSIS
-	cat [file ...]
+    cat [file ...]
 DESCRIPTION
-	The cat utility reads files sequentually and write them to standard output.`)
+    The cat utility reads files sequentually and write them to standard output.`)
 }
 
 func (cmd *CatCmd) Run(w io.Writer, args []string) {
@@ -103,11 +102,11 @@ func (cmd *ExitCmd) Name() string {
 
 func (cmd *ExitCmd) Help(w io.Writer) {
 	fmt.Fprintln(w, `NAME
-	exit -- exit the shell
+    exit -- exit the shell
 SYNOPSIS
-	exit
+    exit
 DESCRIPTION
-	exit the mainframe shell. Logs the user out.`)
+    exit the mainframe shell. Logs the user out.`)
 }
 
 func (cmd *ExitCmd) Run(w io.Writer, args []string) {
