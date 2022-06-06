@@ -46,10 +46,15 @@ Why exactly this long build line? It stems from the go.mod file defining the roo
     module github.com/ordovician/decoy
 
     go 1.16
+
+However you can use local paths by prefixing with `./` like this:
+
+    ❯ go build ./cmd/runlogin
     
 The build command will use this defined module name when building. You can also directly run commands this way:
 
-    ❯ go run github.com/ordovician/decoy/cmd/runlogi
+    ❯ go run github.com/ordovician/decoy/cmd/runlogin
+    ❯ go run ./cmd/runlogin
     
 However after building you will get local executables which you can run like this:
 
