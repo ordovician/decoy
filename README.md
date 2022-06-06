@@ -31,3 +31,31 @@ and hash functions in Go by pretending to be hackers.
 If you want to be an actual hacker, you need to find other tools 
 as this is a totally outdated approach.
 
+## Building, Running and Using Programs
+This module is setup as multiple packages which produce a number of command line tools such as runlogin, generate, encrypt, decrypt and addpasswd.
+
+You can build these tools in the following way:
+
+   ❯ go build github.com/ordovician/decoy/cmd/runlogin
+   ❯ go build github.com/ordovician/decoy/cmd/addpasswd
+   ❯ go build github.com/ordovician/decoy/cmd/decryp
+    
+Why exactly this long build line? It stems from the go.mod file defining the root of the package like this:
+
+    ❯ cat go.mod
+    module github.com/ordovician/decoy
+
+    go 1.16
+    
+The build command will use this defined module name when building. You can also directly run commands this way:
+
+    ❯ go run github.com/ordovician/decoy/cmd/runlogi
+    
+However after building you will get local executables which you can run like this:
+
+    ❯ ./runlogin
+    Login: thomas
+    Password: qwerty
+    Большая Электронно-Счётная Машина 6: June 6, 2022
+    Welcome to БЭСМ-6 comrade thomas
+    
