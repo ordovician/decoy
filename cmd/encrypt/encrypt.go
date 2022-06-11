@@ -12,9 +12,43 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	// structured logging
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	// "log"
 )
 
+var logger *zap.Logger
+var sugar *zap.SugaredLogger
+
+// func initLogger() {
+// 	logger, _ = zap.NewDevelopment()
+// 	sugar = logger.Sugar()
+// }
+
+// Sets up logging to file log.json with log level DebugLevel.
+// NOTE: This was  code was copied. I cannot personally make good sense of it.
+// Why do we need cores, sync writers, callers. Seems like it exposes uncessesary complexity.
+func initLogger() {
+	config := zap.NewDevelopmentEncoderConfig()
+	config.EncodeTime = zapcore.ISO8601TimeEncoder
+	fileEncoder := zapcore.NewJSONEncoder(config)
+	logFile, _ := os.OpenFile("log.json", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	writer := zapcore.AddSync(logFile)
+	defaultLogLevel := zapcore.DebugLevel
+	core := zapcore.NewTee(
+		zapcore.NewCore(fileEncoder, writer, defaultLogLevel),
+	)
+	logger = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
+	sugar = logger.Sugar()
+}
+
 func main() {
+	initLogger()
+	defer logger.Sync() // flushes buffer, if any
+
+	// Parse command line arguments
 	var encodingStr string // how we encode the generated key
 	var keyFilename string // file containg the decryption key
 
@@ -100,9 +134,13 @@ func encrypt(key []byte, plaintext []byte) ([]byte, error) {
 	}
 
 	var msg []byte
+	sugar.Debugw("Block allocation", "len(plaintext)", len(plaintext), "BlockSize", aes.BlockSize, "Remainder", len(plaintext)%aes.BlockSize)
 	if len(plaintext)%aes.BlockSize != 0 {
 		nblocks := 1 + len(plaintext)/aes.BlockSize
 		msg = make([]byte, nblocks*aes.BlockSize)
+
+		sugar.Debugw("new msg", "len(msg)", len(msg))
+
 		copy(msg, plaintext)
 	} else {
 		msg = plaintext
@@ -119,6 +157,8 @@ func encrypt(key []byte, plaintext []byte) ([]byte, error) {
 
 	// CryptBlocks can work in-place if the two arguments are the same.
 	mode.CryptBlocks(ciphertext[aes.BlockSize:], msg)
+
+	sugar.Debugw("Final", "len(ciphertext)", len(ciphertext))
 
 	return ciphertext, nil
 }

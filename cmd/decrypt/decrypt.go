@@ -11,11 +11,16 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"log"
 )
 
 func main() {
+	// To disable log output. Used when we are not debugging the code
+	log.SetOutput(io.Discard)
+
 	var encodingStr string // how we encode the generated key
-	var keyFilename string // file containg the decryption key
+	var keyFilename string // file containing the decryption key
 
 	flag.StringVar(&encodingStr, "encoding", "hex", "Encoding used to store key. Could be hex, base32, base64 or pem")
 	flag.StringVar(&keyFilename, "key", "key.pem", "File storing the decryption key")
@@ -48,6 +53,8 @@ func main() {
 	ciphertext := make([]byte, base32.StdEncoding.DecodedLen(len(encodedText)))
 	base32.StdEncoding.Decode(ciphertext, encodedText)
 
+	log.Printf("len(ciphertext) = %d", len(ciphertext))
+
 	message, err := decrypt(key, ciphertext)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to decrypt %s: %v\n", flag.Arg(0), err)
@@ -56,7 +63,7 @@ func main() {
 	fmt.Printf("%s", message)
 }
 
-// DecodeKey used for encrypton by reading from reader assuming it is stored
+// DecodeKey used for encryption by reading from reader assuming it is stored
 // in encodingStr format.
 func DecodeKey(reader io.Reader, encodingStr string) ([]byte, error) {
 	if encodingStr == "pem" {
@@ -87,7 +94,7 @@ func DecodeKey(reader io.Reader, encodingStr string) ([]byte, error) {
 // decrypt a message using decryption key with AES algorithm operating in block chaining mode
 func decrypt(key []byte, ciphertext []byte) (string, error) {
 	var (
-		block cipher.Block // An encrypter or decryptere for an individual block
+		block cipher.Block // An encrypter or decrypter for an individual block
 		err   error
 	)
 	block, err = aes.NewCipher(key)
@@ -95,7 +102,8 @@ func decrypt(key []byte, ciphertext []byte) (string, error) {
 		return "", fmt.Errorf("Unable to decrypt ciphertext: %w", err)
 	}
 
-	if len(ciphertext) > aes.BlockSize {
+	log.Printf("BlockSize: %d", aes.BlockSize)
+	if len(ciphertext) < aes.BlockSize {
 		return "", fmt.Errorf("ciphertext too short. Needs to be larger than a block")
 	}
 
