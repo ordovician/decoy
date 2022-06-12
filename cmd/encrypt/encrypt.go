@@ -32,8 +32,8 @@ func init() {
 
 	// Make it possible to have different log levels
 	// Edit to have file as output for what you want to log and use io.Discard to turn off logging
-	DebugLog = log.New(file, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
-	InfoLog = log.New(file, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+	DebugLog = log.New(io.Discard, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
+	InfoLog = log.New(io.Discard, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
 	WarnLog = log.New(io.Discard, "WARNING: ", log.Ldate|log.Ltime|log.Lshortfile)
 	ErrorLog = log.New(file, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
 }
