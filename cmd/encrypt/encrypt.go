@@ -13,36 +13,32 @@ import (
 	"io"
 	"os"
 
-	// structured logging
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	// "log"
+	"log"
 )
 
-var logger *zap.Logger
-var sugar *zap.SugaredLogger
+var (
+	DebugLog *log.Logger
+	WarnLog  *log.Logger
+	InfoLog  *log.Logger
+	ErrorLog *log.Logger
+)
 
-// Sets up logging to file log.json with log level DebugLevel.
-// NOTE: This was  code was copied. I cannot personally make good sense of it.
-// Why do we need cores, sync writers, callers. Seems like it exposes uncessesary complexity.
-func initLogger() {
-	config := zap.NewDevelopmentEncoderConfig()
-	config.EncodeTime = zapcore.RFC3339TimeEncoder
-	fileEncoder := zapcore.NewJSONEncoder(config)
-	logFile, _ := os.OpenFile("log.json", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	writer := zapcore.AddSync(logFile)
-	defaultLogLevel := zapcore.DebugLevel
-	core := zapcore.NewTee(
-		zapcore.NewCore(fileEncoder, writer, defaultLogLevel),
-	)
-	logger = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
-	sugar = logger.Sugar()
+// Called first in any package
+func init() {
+	file, err := os.OpenFile("logs.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Make it possible to have different log levels
+	// Edit to have file as output for what you want to log and use io.Discard to turn off logging
+	DebugLog = log.New(file, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
+	InfoLog = log.New(file, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+	WarnLog = log.New(io.Discard, "WARNING: ", log.Ldate|log.Ltime|log.Lshortfile)
+	ErrorLog = log.New(file, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
 }
 
 func main() {
-	initLogger()
-	defer logger.Sync() // flushes buffer, if any
-
 	// Parse command line arguments
 	var encodingStr string // how we encode the generated key
 	var keyFilename string // file containing the decryption key
@@ -52,6 +48,7 @@ func main() {
 
 	flag.Parse()
 
+	InfoLog.Printf("Opening keyfile: %s", keyFilename)
 	keyFile, err := os.Open(keyFilename)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Could not open encryption key file:", err)
@@ -69,26 +66,25 @@ func main() {
 		os.Exit(1)
 	}
 
+	InfoLog.Printf("Reading message file: %s", flag.Arg(0))
 	message, err := os.ReadFile(flag.Arg(0))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to read %s: %v\n", flag.Arg(0), err)
 		os.Exit(1)
 	}
 
+	InfoLog.Printf("Encrypting read message")
 	ciphertext, err := encrypt(key, message)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to encrypt %s: %v\n", flag.Arg(0), err)
 		os.Exit(1)
 	}
 
-	n := len(ciphertext)
-	sugar.Debugf("Cipher text chars %d, %d, %d", ciphertext[n-3], ciphertext[n-2], ciphertext[n-1])
-
 	encoding := base32.StdEncoding
 	encodedCiphertext := make([]byte, encoding.EncodedLen(len(ciphertext)))
 	encoding.Encode(encodedCiphertext, ciphertext)
 
-	sugar.Debugw("Encoded cipher text", "len(encodedCiphertext)", len(encodedCiphertext))
+	DebugLog.Printf("len(encodedCiphertext) = %d", len(encodedCiphertext))
 	fmt.Printf("%s", encodedCiphertext)
 }
 
@@ -134,17 +130,15 @@ func encrypt(key []byte, plaintext []byte) ([]byte, error) {
 	}
 
 	var msg []byte
-	sugar.Debugw("Block allocation", "len(plaintext)", len(plaintext), "BlockSize", aes.BlockSize, "Remainder", len(plaintext)%aes.BlockSize)
 	if len(plaintext)%aes.BlockSize != 0 {
 		nblocks := 1 + len(plaintext)/aes.BlockSize
 		msg = make([]byte, nblocks*aes.BlockSize)
-
-		sugar.Debugw("new msg", "len(msg)", len(msg))
-
 		copy(msg, plaintext)
 	} else {
 		msg = plaintext
 	}
+
+	DebugLog.Printf("len(msg) = %d", len(msg))
 
 	ciphertext := make([]byte, aes.BlockSize+len(msg))
 	iv := ciphertext[:aes.BlockSize]
@@ -157,8 +151,6 @@ func encrypt(key []byte, plaintext []byte) ([]byte, error) {
 
 	// CryptBlocks can work in-place if the two arguments are the same.
 	mode.CryptBlocks(ciphertext[aes.BlockSize:], msg)
-
-	sugar.Debugw("Final", "len(ciphertext)", len(ciphertext))
 
 	return ciphertext, nil
 }
