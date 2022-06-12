@@ -16,6 +16,7 @@ type Command interface {
 type HelpCmd struct{}
 type ListCmd struct{}
 type CatCmd struct{}
+type DecryptCmd struct{}
 type ExitCmd struct{}
 
 func (cmd *HelpCmd) Name() string {
@@ -34,7 +35,7 @@ DESCRIPTION
 func (cmd *HelpCmd) Run(w io.Writer, args []string) {
 	if len(args) == 0 {
 		fmt.Fprintln(w, `Valid commands:
-    ls   cat   exit   help`)
+    ls   cat   decrypt	exit   help`)
 		return
 	}
 
@@ -96,6 +97,41 @@ func (cmd *CatCmd) Run(w io.Writer, args []string) {
 	}
 }
 
+func (cmd *DecryptCmd) Name() string {
+	return "decrypt"
+}
+
+func (cmd *DecryptCmd) Help(w io.Writer) {
+	fmt.Fprintln(w, `NAME
+    decrypt -- decrypts and file and print contents
+SYNOPSIS
+	decrypt file
+DESCRIPTION
+    The decrypt utility decrypts a single file and write it to standard output.`)
+}
+
+func (cmd *DecryptCmd) Run(w io.Writer, args []string) {
+	if len(args) < 1 {
+		fmt.Println("Missing file argument")
+	} else {
+		key, err := loadKey()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Key required to decrypt data is missing: %v\n", err)
+			return
+		}
+
+		for _, arg := range args {
+			msg, err := decryptFile(key, arg)
+
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Could not read file %s: %s\n", arg, err)
+				break
+			}
+			fmt.Println(msg)
+		}
+	}
+}
+
 func (cmd *ExitCmd) Name() string {
 	return "exit"
 }
@@ -116,6 +152,7 @@ func (cmd *ExitCmd) Run(w io.Writer, args []string) {
 var commands = [...]Command{
 	new(HelpCmd),
 	new(ListCmd),
+	new(DecryptCmd),
 	new(CatCmd),
 	new(ExitCmd),
 }

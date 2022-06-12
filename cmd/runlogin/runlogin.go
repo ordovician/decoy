@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-var debug *log.Logger = log.New(os.Stdout, "", 0)
+var debug *log.Logger = log.New(os.Stdout, "DEBUG: ", 0)
 
 // hashPassword
 func hashPassword(passwd string) string {
