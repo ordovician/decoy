@@ -53,10 +53,9 @@ func main() {
 	log.Printf("len(encodedText) = %d", len(encodedText))
 
 	ciphertext := make([]byte, base32.StdEncoding.DecodedLen(len(encodedText)))
-	base32.StdEncoding.Decode(ciphertext, encodedText)
+	n, _ := base32.StdEncoding.Decode(ciphertext, encodedText)
+	ciphertext = ciphertext[:n]
 
-	n := len(ciphertext)
-	log.Printf("Last chars %d, %d, %d", ciphertext[n-3], ciphertext[n-2], ciphertext[n-1])
 	log.Printf("len(ciphertext) = %d", len(ciphertext))
 
 	message, err := decrypt(key, ciphertext)
