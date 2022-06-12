@@ -17,7 +17,7 @@ import (
 
 func main() {
 	// To disable log output. Used when we are not debugging the code
-	log.SetOutput(io.Discard)
+	//log.SetOutput(io.Discard)
 
 	var encodingStr string // how we encode the generated key
 	var keyFilename string // file containing the decryption key
@@ -50,9 +50,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	log.Printf("len(encodedText) = %d", len(encodedText))
+
 	ciphertext := make([]byte, base32.StdEncoding.DecodedLen(len(encodedText)))
 	base32.StdEncoding.Decode(ciphertext, encodedText)
 
+	n := len(ciphertext)
+	log.Printf("Last chars %d, %d, %d", ciphertext[n-3], ciphertext[n-2], ciphertext[n-1])
 	log.Printf("len(ciphertext) = %d", len(ciphertext))
 
 	message, err := decrypt(key, ciphertext)

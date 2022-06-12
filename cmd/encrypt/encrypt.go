@@ -22,17 +22,12 @@ import (
 var logger *zap.Logger
 var sugar *zap.SugaredLogger
 
-// func initLogger() {
-// 	logger, _ = zap.NewDevelopment()
-// 	sugar = logger.Sugar()
-// }
-
 // Sets up logging to file log.json with log level DebugLevel.
 // NOTE: This was  code was copied. I cannot personally make good sense of it.
 // Why do we need cores, sync writers, callers. Seems like it exposes uncessesary complexity.
 func initLogger() {
 	config := zap.NewDevelopmentEncoderConfig()
-	config.EncodeTime = zapcore.ISO8601TimeEncoder
+	config.EncodeTime = zapcore.RFC3339TimeEncoder
 	fileEncoder := zapcore.NewJSONEncoder(config)
 	logFile, _ := os.OpenFile("log.json", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	writer := zapcore.AddSync(logFile)
@@ -50,7 +45,7 @@ func main() {
 
 	// Parse command line arguments
 	var encodingStr string // how we encode the generated key
-	var keyFilename string // file containg the decryption key
+	var keyFilename string // file containing the decryption key
 
 	flag.StringVar(&encodingStr, "encoding", "hex", "Encoding used to store key. Could be hex, base32, base64 or pem")
 	flag.StringVar(&keyFilename, "key", "key.pem", "File storing the encryption key")
@@ -85,14 +80,19 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Failed to encrypt %s: %v\n", flag.Arg(0), err)
 		os.Exit(1)
 	}
+
+	n := len(ciphertext)
+	sugar.Debugf("Cipher text chars %d, %d, %d", ciphertext[n-3], ciphertext[n-2], ciphertext[n-1])
+
 	encoding := base32.StdEncoding
 	encodedCiphertext := make([]byte, encoding.EncodedLen(len(ciphertext)))
 	encoding.Encode(encodedCiphertext, ciphertext)
 
+	sugar.Debugw("Encoded cipher text", "len(encodedCiphertext)", len(encodedCiphertext))
 	fmt.Printf("%s", encodedCiphertext)
 }
 
-// DecodeKey used for encrypton by reading from reader assuming it is stored
+// DecodeKey used for encryption by reading from reader assuming it is stored
 // in encodingStr format.
 func DecodeKey(reader io.Reader, encodingStr string) ([]byte, error) {
 	if encodingStr == "pem" {
