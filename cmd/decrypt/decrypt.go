@@ -17,7 +17,7 @@ import (
 
 func main() {
 	// To disable log output. Used when we are not debugging the code
-	//log.SetOutput(io.Discard)
+	log.SetOutput(io.Discard)
 
 	var encodingStr string // how we encode the generated key
 	var keyFilename string // file containing the decryption key
@@ -37,6 +37,7 @@ func main() {
 	key, err := DecodeKey(keyFile, encodingStr)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Unable to decode encryption key file:", err)
+		os.Exit(1)
 	}
 
 	if flag.NArg() < 1 {
@@ -50,10 +51,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Printf("len(encodedText) = %d", len(encodedText))
-
 	ciphertext := make([]byte, base32.StdEncoding.DecodedLen(len(encodedText)))
-	n, _ := base32.StdEncoding.Decode(ciphertext, encodedText)
+	n, err := base32.StdEncoding.Decode(ciphertext, encodedText)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Could not decode base32 encoded encrypted text:", err)
+		os.Exit(1)
+	}
+	// The decoded cipher text is only n character long, so cut it short otherwise you
+	// include padded zeros. DecodedLen is not the actual length, just a minimum length required
 	ciphertext = ciphertext[:n]
 
 	log.Printf("len(ciphertext) = %d", len(ciphertext))
@@ -105,7 +110,6 @@ func decrypt(key []byte, ciphertext []byte) (string, error) {
 		return "", fmt.Errorf("Unable to decrypt ciphertext: %w", err)
 	}
 
-	log.Printf("BlockSize: %d", aes.BlockSize)
 	if len(ciphertext) < aes.BlockSize {
 		return "", fmt.Errorf("ciphertext too short. Needs to be larger than a block")
 	}
