@@ -3,17 +3,15 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"encoding/base32"
-	"fmt"
+	"encoding/base64"
 	"io"
 	"testing"
 )
 
 func TestReadCryptKey(t *testing.T) {
-	fmt.Println(cryptKey)
 	keyReader := bytes.NewBufferString(cryptKey)
 	bufio.NewReader(keyReader)
-	var decoder io.Reader = base32.NewDecoder(base32.StdEncoding, keyReader)
+	var decoder io.Reader = base64.NewDecoder(base64.StdEncoding, keyReader)
 
 	key, err := io.ReadAll(decoder)
 	if err != nil {
@@ -21,7 +19,7 @@ func TestReadCryptKey(t *testing.T) {
 	}
 
 	buffer := new(bytes.Buffer)
-	encoder := base32.NewEncoder(base32.StdEncoding, buffer)
+	encoder := base64.NewEncoder(base64.StdEncoding, buffer)
 
 	encoder.Write(key)
 	encoder.Close()
@@ -33,7 +31,7 @@ func TestReadCryptKey(t *testing.T) {
 }
 
 func TestDecryptKeyAsString(t *testing.T) {
-	encoding := base32.StdEncoding
+	encoding := base64.StdEncoding
 
 	keyBytes := make([]byte, encoding.DecodedLen(len(cryptKey)))
 	n, err := encoding.Decode(keyBytes, []byte(cryptKey))
