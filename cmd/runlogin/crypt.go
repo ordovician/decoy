@@ -5,7 +5,7 @@ import (
 	"crypto/cipher"
 	_ "embed"
 	"encoding/base32"
-	"flag"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"os"
@@ -13,15 +13,14 @@ import (
 	"strings"
 )
 
-//go:embed key.txt
+//go:embed key.base64.txt
 var cryptKey string
 
-// Load key to decrypt data from key.txt
-// The key must be stored in base32 format. The keyname is assumed to refer
-// to a file in an embedded filesystem (embed.FS)
+// Load key to decrypt data from key.base64.txt
+// The key must be stored in base64 format.
 func loadKey() (key []byte, err error) {
 	keyReader := strings.NewReader(cryptKey)
-	var decoder io.Reader = base32.NewDecoder(base32.StdEncoding, keyReader)
+	var decoder io.Reader = base64.NewDecoder(base64.StdEncoding, keyReader)
 
 	key, err = io.ReadAll(decoder)
 	if err != nil {
@@ -50,7 +49,7 @@ func decryptFile(key []byte, filename string) (message string, err error) {
 
 	message, err = decryptBytes(key, ciphertext)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to decrypt %s: %v\n", flag.Arg(0), err)
+		fmt.Fprintf(os.Stderr, "Failed to decrypt %s: %v\n", filename, err)
 		os.Exit(1)
 	}
 	return
