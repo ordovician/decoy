@@ -43,7 +43,7 @@ func connect(protocol, address string) error {
 	defer conn.Close()
 
 	// to hold read characters from server
-	buffer := make([]byte, 256)
+	buffer := make([]byte, 512)
 	input := bufio.NewScanner(os.Stdin)
 	for {
 		// Get data from server
